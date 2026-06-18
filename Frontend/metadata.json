@@ -1,0 +1,6 @@
+{
+  "name": "AI Venture Studio",
+  "description": "Premium frontend workspace for AI Venture Studio. Build, validate and scale startups with professional tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
