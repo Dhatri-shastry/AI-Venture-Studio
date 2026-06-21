@@ -43,7 +43,7 @@ export default function DashboardView() {
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
-  // Healthcare Dashboard Reference colors:
+  // Healthcare Dashboard Reference colors mentioned in the design spec:
   // Light off-white base client workspace, floating modern white widgets, pure blue accent marks.
   return (
     <div className="min-h-screen bg-[#F5F8FC] dark:bg-[#0A0D14] flex transition-colors text-slate-800 dark:text-slate-200">
