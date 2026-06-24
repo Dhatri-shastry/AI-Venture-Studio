@@ -1,22 +1,19 @@
-# Dependencies
+# dependencies
 node_modules/
-Backend/node_modules/
-Frontend/node_modules/
+**/node_modules/
 
-# Next.js
+# nextjs
 .next/
+out/
 
-# Environment files
+# env files
 .env
 .env.local
 
-# Build files
-dist/
-build/
-
-# Logs
-*.log
-
-serviceAccount.json
+# firebase secrets
 Backend/firebase/serviceAccount.json
-*.json
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
