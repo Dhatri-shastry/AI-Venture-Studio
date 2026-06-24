@@ -16,3 +16,7 @@ build/
 
 # Logs
 *.log
+
+serviceAccount.json
+Backend/firebase/serviceAccount.json
+*.json

@@ -5,7 +5,8 @@
 
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter , redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import {
   Compass,
   Blocks,
@@ -27,10 +28,23 @@ import {
   UserCheck2,
 } from 'lucide-react';
 
+import { auth } from "@clerk/nextjs/server";
+
 export default function DashboardView() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedVenture, setSelectedVenture] = useState('MedTech AI Diagnostics');
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect("/auth?mode=login");
+  }
+  
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect("/auth?mode=login");
+  }
   
   // Custom interactive mock state - task checkoff
   const [tasks, setTasks] = useState([
@@ -46,6 +60,9 @@ export default function DashboardView() {
   // Healthcare Dashboard Reference colors mentioned in the design spec:
   // Light off-white base client workspace, floating modern white widgets, pure blue accent marks.
   return (
+    <div>
+      Dashboard
+    </div>
     <div className="min-h-screen bg-[#F5F8FC] dark:bg-[#0A0D14] flex transition-colors text-slate-800 dark:text-slate-200">
       
       {/* 1. HEALTHCARE-STYLE VERTICAL SIDEBAR */}
