@@ -218,7 +218,7 @@ export default function ChatbotView({ onGoToDashboard, onGoToLanding }: ChatbotV
           </div>
 
           {/* CHAT INPUT AREA */}
-          <div className="p-4 bg-white/80 dark:bg-[#11131E]/80 border-t border-gray-200/80 dark:border-gray-800/80 z-10 backdrop-blur-md">
+          <div className="p-6 bg-white/80 dark:bg-[#11131E]/80 border-t border-gray-200/80 dark:border-gray-800/80 z-10 backdrop-blur-md">
             <div className="max-w-3xl mx-auto">
               <div className="relative flex items-center bg-[#F5F8FC] dark:bg-[#0A0D14] border border-gray-200 dark:border-gray-800 rounded-xl p-1.5 focus-within:border-blue-500/60 transition-all">
                 <div className="flex items-center space-x-1 px-2.5">
