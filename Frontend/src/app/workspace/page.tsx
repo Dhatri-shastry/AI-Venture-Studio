@@ -4,11 +4,11 @@ import Sidebar from "@/components/workspace/Sidebar";
 import ChatHistory from "@/components/workspace/ChatHistory";
 import ChatArea from "@/components/workspace/ChatArea";
 import RobotAssistant from "@/components/workspace/RobotAssistant";
-import WorkspaceHeader from "@/components/workspace/WorkSpaceHeader.tsx";
+import WorkspaceHeader from "@/components/workspace/WorkSpaceHeader";
 
 
 export default function WorkspacePage() {
-  // Light is default as requested
+  // Light is default theme
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('new-chat');

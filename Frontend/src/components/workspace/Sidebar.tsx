@@ -46,13 +46,19 @@ export default function Sidebar({
   }, []);
 
   const menuItems = [
-    { id: 'new-chat', label: 'New Chat', icon: Plus, action: onResetChat },
-    { id: 'history', label: 'History', icon: History, action: onOpenHistory },
-    { id: 'projects', label: 'Projects', icon: Briefcase },
-    { id: 'research', label: 'Research', icon: Compass },
-    { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'settings', label: 'Settings', icon: Settings },
-  ];
+  { id: "new-chat", label: "New Chat", icon: Plus, action: onResetChat },
+  { id: "projects", label: "Projects", icon: Briefcase },
+  { id: "research", label: "Research", icon: Compass },
+  { id: "documents", label: "Documents", icon: FileText },
+  { id: "settings", label: "Settings", icon: Settings },
+];
+
+const recentChats = [
+  "Startup Validation",
+  "Market Research",
+  "Investor Pitch",
+  "Food Delivery App",
+];
 
   return (
     <aside
@@ -127,7 +133,7 @@ export default function Sidebar({
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${
                 isActive 
-                  ? 'bg-brand-blue text-white shadow-sm' 
+                  ? 'bg-[#2563EB] text-white shadow-sm' 
                   : theme === 'dark' 
                     ? 'text-zinc-400 hover:text-white hover:bg-zinc-90 w-full hover:bg-zinc-900/60' 
                     : 'text-slate-650 text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -143,6 +149,40 @@ export default function Sidebar({
           );
         })}
       </nav>
+
+{/* Recent Chats */}
+{!collapsed && (
+  <div className="mt-6 border-t border-slate-200 dark:border-zinc-800 pt-4">
+    <div className="flex items-center gap-2 px-3 mb-3">
+      <History className="h-4 w-4 text-[#2563EB]" />
+      <span className="text-xs font-bold uppercase tracking-wide text-[#2563EB]">
+        Recent Chats
+      </span>
+    </div>
+
+    <div className="space-y-1">
+      {recentChats.map((chat, index) => (
+        <button
+          key={index}
+          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+            theme === "dark"
+              ? "hover:bg-zinc-900 text-zinc-300"
+              : "hover:bg-slate-100 text-slate-700"
+          }`}
+        >
+          {chat}
+        </button>
+      ))}
+
+      <button
+        onClick={onOpenHistory}
+        className="w-full text-left px-3 py-2 text-sm font-bold text-[#2563EB] hover:underline"
+      >
+        View All →
+      </button>
+    </div>
+  </div>
+)}
 
       {/* Sidebar Footer */}
       <div className={`p-4 border-t ${

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { Paperclip, Mic, ArrowUp, Sparkles, AlertCircle, Compass, ShieldAlert, ArrowRight } from 'lucide-react';
 import Image from "next/image";
+import { sendMessage } from '@/services/chat.service';
 
 interface ChatAreaProps {
   theme: 'light' | 'dark';
@@ -60,6 +61,18 @@ export default function ChatArea({ theme }: ChatAreaProps) {
     }
   }, []);
 
+  interface Message {
+
+    role: "user" | "assistant";
+
+    content: string;
+
+}
+
+const [messages, setMessages] = useState<Message[]>([]);
+
+const [loading, setLoading] = useState(false);
+
   const handleCardClick = (promptText: string) => {
     setInputText(promptText);
     if (textInputRef.current) {
@@ -71,11 +84,44 @@ export default function ChatArea({ theme }: ChatAreaProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
-    setInputText('');
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!inputText.trim()) return;
+
+  const userMessage = inputText;
+
+  setMessages(prev => [
+    ...prev,
+    {
+      role: "user",
+      content: userMessage,
+    },
+  ]);
+
+  setInputText("");
+
+  try {
+    setLoading(true);
+    const response = await sendMessage({
+    message: userMessage,
+    provider: "gemini",
+});
+
+    setMessages(prev => [
+      ...prev,
+      {
+        role: "assistant",
+        content: response.response,
+      },
+    ]);
+    setLoading(false);
+
+  } catch (error) {
+     setLoading(false);
+    console.error(error);
+  }
+};
 
   return (
     <div
@@ -86,15 +132,21 @@ export default function ChatArea({ theme }: ChatAreaProps) {
     >
       
       {/* Scrollable chat body */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-10 flex flex-col items-center justify-center">
-        <div ref={emptyStateRef} className="max-w-2xl w-full flex flex-col items-center text-center">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-10">
+        {messages.length === 0 ? (
+
+<div
+    ref={emptyStateRef}
+    className="max-w-2xl w-full flex flex-col items-center text-center"
+>
+        
           
           {/* Extremely compact, non-intrusive robot badge */}
           <div className="relative mb-5 select-none opacity-90 hover:opacity-100 transition-opacity">
             {theme === 'dark' && (
               <div className="absolute h-24 w-24 rounded-full bg-brand-blue/10 blur-xl animate-pulse"></div>
             )}
-            <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-slate-200/40 dark:border-zinc-800/65 shadow-md">
+            <div className="relative h-22 w-22 overflow-hidden rounded-full border-2 border-slate-200/40 dark:border-zinc-800/65 shadow-md">
               <Image
   src="/images/assistant-robot.png"
   alt="AI Venture Helper"
@@ -107,7 +159,7 @@ export default function ChatArea({ theme }: ChatAreaProps) {
             <div className={`absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full border shadow-sm ${
               theme === 'dark' ? 'bg-zinc-900 border-zinc-800 text-brand-blue' : 'bg-white border-slate-100 text-brand-blue'
             }`}>
-              <Sparkles className="h-3.5 w-3.5" />
+              <Sparkles className="h-4 w-4" />
             </div>
           </div>
 
@@ -146,25 +198,78 @@ export default function ChatArea({ theme }: ChatAreaProps) {
                   }`}>
                     {card.title}
                   </h3>
-                  <p className="text-[11px] leading-relaxed text-slate-400 dark:text-zinc-500 font-normal">
+                  <p className="text-sm leading-relaxed text-slate-400 dark:text-zinc-500 font-normal">
                     {card.subtitle}
                   </p>
                 </div>
                 
                 <div className="mt-3 flex items-center justify-end">
-                  <ArrowRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-brand-blue group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="h-4 w-4 text-[#2563EB] group-hover:translate-x-0.5 transition-all" />
                 </div>
               </button>
             ))}
           </div>
 
         </div>
+       ) : (
+
+<div className="w-full max-w-4xl mx-auto space-y-6">
+
+    {messages.map((message, index) => (
+      {loading && (
+
+<div className="flex justify-start">
+
+    <div
+        className={`rounded-2xl px-5 py-3 ${
+            theme === "dark"
+                ? "bg-zinc-900 text-white"
+                : "bg-gray-100 text-black"
+        }`}
+    >
+        AI is typing...
+    </div>
+
+</div>
+
+)}
+
+        <div
+            key={index}
+            className={`flex ${
+                message.role === "user"
+                    ? "justify-end"
+                    : "justify-start"
+            }`}
+        >
+
+            <div
+                className={`max-w-[75%] rounded-2xl px-5 py-3 ${
+                    message.role === "user"
+                        ? "bg-[#2563EB] text-white"
+                        : theme === "dark"
+                            ? "bg-zinc-900 text-white"
+                            : "bg-gray-100 text-black"
+                }`}
+            >
+
+                {message.content}
+
+            </div>
+
+        </div>
+
+    ))}
+
+</div>
+
+)}
       </div>
 
       {/* ChatGPT-style clean bottom centered input box - primary focal point */}
       <div 
         ref={inputContainerRef}
-        className={`p-4 md:p-6 w-full max-w-3xl mx-auto ${
+        className={`p-4 md:p-6 w-full max-w-4xl mx-auto ${
           theme === 'dark' ? 'md:bg-transparent' : 'md:bg-transparent'
         }`}
       >
@@ -183,7 +288,7 @@ export default function ChatArea({ theme }: ChatAreaProps) {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Validate an idea, analyze TAM, draft documentation..."
-            className={`w-full rounded-t-3xl pt-4 pl-4.5 pr-16 pb-12 text-sm resize-none outline-none focus:ring-0 font-normal ${
+            className={`w-full rounded-t-3xl pt-4 pl-4.5 pr-16 pb-12 text-base resize-none outline-none focus:ring-0 font-normal ${
               theme === 'dark' ? 'bg-transparent text-zinc-100 placeholder-zinc-500' : 'bg-transparent text-slate-800 placeholder-slate-400'
             }`}
             onKeyDown={(e) => {
@@ -205,7 +310,7 @@ export default function ChatArea({ theme }: ChatAreaProps) {
                 }`}
                 title="Add attachments"
               >
-                <Paperclip className="h-4 w-4" />
+                <Paperclip className="h-5 w-5" />
               </button>
               
               <button
@@ -215,26 +320,25 @@ export default function ChatArea({ theme }: ChatAreaProps) {
                 }`}
                 title="Dictate message"
               >
-                <Mic className="h-4 w-4" />
+                <Mic className="h-5 w-5" />
               </button>
             </div>
 
             {/* Submit Action Button */}
             <button
-              type="submit"
-              disabled={!inputText.trim()}
-              className={`flex h-8.5 w-8.5 items-center justify-center rounded-full transition-all ${
-                inputText.trim() 
-                  ? 'bg-brand-blue text-white hover:bg-brand-blue-hover scale-100 shadow-sm' 
-                  : 'bg-slate-105 dark:bg-zinc-900 bg-slate-100 text-slate-400 dark:text-zinc-600 scale-95 cursor-not-allowed opacity-50'
-              }`}
-            >
-              <ArrowUp className="h-4 w-4" />
-            </button>
+  type="submit"
+  className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 ${
+    theme === "dark"
+      ? "bg-[#2563EB] hover:bg-blue-700"
+      : "bg-[#2563EB] hover:bg-blue-700"
+  }`}
+>
+  <ArrowUp className="h-5 w-5 text-white" />
+</button>
           </div>
         </form>
 
-        <p className="text-center text-[10.5px] text-slate-400 dark:text-zinc-500 mt-3.5 select-none font-normal">
+        <p className="text-center text-[10.5px] text-sm dark:text-zinc-500 mt-3.5 select-none font-normal">
           AI Venture Studio generates smart outlines. Double-check structural details before execution.
         </p>
       </div>
