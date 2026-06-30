@@ -1,45 +1,32 @@
 const API_URL = "http://localhost:5000/api";
 
 export interface ChatRequest {
-
-    message: string;
-
-    provider?: string;
-
+  message: string;
+  provider?: string;
 }
 
-export async function sendMessage(
+export async function sendMessage(body: ChatRequest) {
+  try {
+    const response = await fetch(`${API_URL}/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-    body: ChatRequest
+    console.log("Status:", response.status);
 
-) {
-
-    const response = await fetch(
-
-        `${API_URL}/chat`,
-
-        {
-
-            method: "POST",
-
-            headers: {
-
-                "Content-Type": "application/json"
-
-            },
-
-            body: JSON.stringify(body)
-
-        }
-
-    );
+    const data = await response.json();
+    console.log("Response:", data);
 
     if (!response.ok) {
-
-        throw new Error("Failed to send message");
-
+      throw new Error(data.message || "Failed to send message");
     }
 
-    return response.json();
-
+    return data;
+  } catch (err) {
+    console.error("Fetch Error:", err);
+    throw err;
+  }
 }
