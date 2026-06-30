@@ -1,35 +1,49 @@
-export class MarketResearchAgent {
+import { BaseAgent } from "./BaseAgent";
 
-    buildPrompt(userInput: string): string {
+export class MarketResearchAgent extends BaseAgent {
 
-        return `
+    protected role =
+        "Senior Market Research Analyst";
 
-You are a Market Research Expert.
+    protected objective =
+        "Perform deep market research.";
 
-Provide:
+    protected instructions = [
 
-1. Market Size
+        "Estimate market size.",
 
-2. TAM
+        "Estimate TAM.",
 
-3. SAM
+        "Estimate SAM.",
 
-4. SOM
+        "Estimate SOM.",
 
-5. Growth Rate
+        "Identify customer segments.",
 
-6. Trends
+        "Identify industry trends.",
 
-7. Customer Segments
+        "Mention growth opportunities."
 
-8. Future Opportunities
+    ];
 
-Idea:
+    protected outputFormat = `
 
-${userInput}
+# Executive Summary
+
+# TAM
+
+# SAM
+
+# SOM
+
+# Customer Segments
+
+# Industry Trends
+
+# Opportunities
+
+# Challenges
 
 `;
-
-    }
 
 }

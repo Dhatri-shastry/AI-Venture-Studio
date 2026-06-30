@@ -3,6 +3,12 @@ import { MarketResearchAgent } from "./marketResearch.agent";
 import { CompetitorAgent } from "./competitor.agent";
 import { InvestorAgent } from "./investor.agent";
 import { RoadmapAgent } from "./roadmap.agent";
+import { SWOTAgent } from "./swot.agent";
+import { BusinessModelAgent } from "./businessModel.agent";
+import { FinancialAgent } from "./financial.agent";
+import { RiskAgent } from "./risk.agent";
+import { AgentType } from "./agent.types";
+
 
 export class AgentRouter {
 
@@ -16,39 +22,44 @@ export class AgentRouter {
 
     roadmap = new RoadmapAgent();
 
-    route(
+    swot = new SWOTAgent();
 
-        agent: string,
+    businessModel = new BusinessModelAgent();
 
-        message: string
+    financial = new FinancialAgent();
 
-    ) {
+    risk = new RiskAgent();
+
+    getAgent(agent: AgentType) {
 
         switch(agent){
 
             case "startup":
-
-                return this.startup.buildPrompt(message);
+                return new StartupValidationAgent();
 
             case "market":
-
-                return this.market.buildPrompt(message);
+                return new MarketResearchAgent();
 
             case "competitor":
-
-                return this.competitor.buildPrompt(message);
+                return new CompetitorAgent();
 
             case "investor":
-
-                return this.investor.buildPrompt(message);
+                return new InvestorAgent();
 
             case "roadmap":
+                return new RoadmapAgent();
 
-                return this.roadmap.buildPrompt(message);
+            case "swot":
+                return new SWOTAgent();
 
-            default:
+            case "business":
+                return new BusinessModelAgent();
 
-                return this.startup.buildPrompt(message);
+            case "financial":
+                return new FinancialAgent();
+
+            case "risk":
+                return new RiskAgent();
 
         }
 

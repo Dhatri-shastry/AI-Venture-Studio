@@ -1,27 +1,43 @@
-export class RoadmapAgent {
+import { BaseAgent } from "./BaseAgent";
 
-    buildPrompt(userInput: string): string {
+export class RoadmapAgent extends BaseAgent {
 
-        return `
+    protected role =
+        "Chief Product Officer";
 
-Create
+    protected objective =
+        "Create a product roadmap.";
 
-Technical Roadmap
+    protected instructions = [
 
-Business Roadmap
+        "Plan MVP.",
 
-Development Timeline
+        "Plan Version 1.",
 
-Launch Timeline
+        "Plan Version 2.",
 
-Milestones
+        "Suggest technologies.",
 
-Idea
+        "Estimate timelines.",
 
-${userInput}
+        "Mention milestones."
+
+    ];
+
+    protected outputFormat = `
+
+# MVP
+
+# Version 1
+
+# Version 2
+
+# Timeline
+
+# Tech Stack
+
+# Milestones
 
 `;
-
-    }
 
 }

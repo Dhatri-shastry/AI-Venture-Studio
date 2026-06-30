@@ -1,5 +1,7 @@
 import { LLMManager } from "./llmManager";
 import { AgentRouter } from "../agents/agentRouter";
+import { SupervisorAgent } from "../agents/supervisor.agent";
+import { ReportService } from "./report.service";
 
 export class ChatService {
 
@@ -7,31 +9,49 @@ export class ChatService {
 
     private router = new AgentRouter();
 
+    private supervisor = new SupervisorAgent();
+
+    private report = new ReportService();
+
     async chat(
 
-        message: string,
+        message:string,
 
-        provider = "gemini",
-
-        agent = "startup"
+        provider="gemini"
 
     ){
 
-        const prompt = this.router.route(
+        const selectedAgents =
 
-            agent,
+            this.supervisor.decideAgents(message);
 
-            message
+        const outputs:string[]=[];
 
-        );
+        for(const type of selectedAgents){
 
-        return await this.llm.generateResponse(
+            const agent = this.router.getAgent(type);
 
-            prompt,
+            if(!agent) continue;
 
-            provider
+            const prompt=
 
-        );
+                agent.buildPrompt(message);
+
+            const response=
+
+                await this.llm.generateResponse(
+
+                    prompt,
+
+                    provider
+
+                );
+
+            outputs.push(response);
+
+        }
+
+        return this.report.combine(outputs);
 
     }
 

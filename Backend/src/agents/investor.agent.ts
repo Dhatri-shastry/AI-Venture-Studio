@@ -1,29 +1,41 @@
-export class InvestorAgent {
+import { BaseAgent } from "./BaseAgent";
 
-    buildPrompt(userInput: string): string {
+export class InvestorAgent extends BaseAgent {
 
-        return `
+    protected role =
+        "Startup Venture Capitalist";
 
-You are a Startup Investor.
+    protected objective =
+        "Evaluate investment potential.";
 
-Analyze
+    protected instructions = [
 
-Business Model
+        "Evaluate revenue model.",
 
-Revenue
+        "Evaluate scalability.",
 
-Scalability
+        "Estimate investment risk.",
 
-Investment Risk
+        "Estimate market potential.",
 
-Funding Recommendation
+        "Suggest funding stage.",
 
-Idea
+        "Give investment recommendation."
 
-${userInput}
+    ];
+
+    protected outputFormat = `
+
+# Executive Summary
+
+# Revenue Model
+
+# Scalability
+
+# Investment Risk
+
+# Recommendation
 
 `;
-
-    }
 
 }

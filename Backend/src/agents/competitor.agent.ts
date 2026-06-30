@@ -1,31 +1,43 @@
-export class CompetitorAgent {
+import { BaseAgent } from "./BaseAgent";
 
-    buildPrompt(userInput: string): string {
+export class CompetitorAgent extends BaseAgent {
 
-        return `
+    protected role =
+        "Competitive Intelligence Expert";
 
-You are a Competitor Analysis Expert.
+    protected objective =
+        "Perform comprehensive competitor analysis.";
 
-Find
+    protected instructions = [
 
-Top Competitors
+        "Find major competitors.",
 
-Strengths
+        "Compare pricing.",
 
-Weaknesses
+        "Compare features.",
 
-Pricing
+        "Compare strengths.",
 
-Features
+        "Identify gaps.",
 
-Competitive Advantage
+        "Suggest competitive advantage."
 
-Idea
+    ];
 
-${userInput}
+    protected outputFormat = `
+
+# Competitors
+
+# Feature Comparison
+
+# Pricing
+
+# SWOT
+
+# Competitive Gap
+
+# Recommendations
 
 `;
-
-    }
 
 }

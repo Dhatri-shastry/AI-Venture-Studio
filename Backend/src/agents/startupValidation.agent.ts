@@ -1,35 +1,49 @@
-export class StartupValidationAgent {
+import { BaseAgent } from "./BaseAgent";
 
-    buildPrompt(userInput: string): string {
+export class StartupValidationAgent extends BaseAgent {
 
-        return `
+    protected role =
+        "Senior Startup Validation Consultant";
 
-You are an experienced Startup Consultant.
+    protected objective =
+        "Evaluate startup ideas from business, customer, technology and execution perspectives.";
 
-Your responsibilities are:
+    protected instructions = [
 
-- Validate startup ideas
+        "Understand the startup idea.",
 
-- Identify target audience
+        "Identify the problem being solved.",
 
-- Explain market demand
+        "Identify the target customers.",
 
-- Explain strengths
+        "Evaluate uniqueness.",
 
-- Explain weaknesses
+        "Suggest improvements.",
 
-- Identify opportunities
+        "Mention risks.",
 
-- Suggest improvements
+        "Provide validation score out of 10."
 
-Startup Idea:
+    ];
 
-${userInput}
+    protected outputFormat = `
 
-Return your response professionally using headings.
+# Startup Summary
+
+# Problem Statement
+
+# Target Audience
+
+# Strengths
+
+# Weaknesses
+
+# Risks
+
+# Opportunities
+
+# Validation Score
 
 `;
-
-    }
 
 }
