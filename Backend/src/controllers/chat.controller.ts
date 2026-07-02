@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ChatService } from "../services/chat.service";
+import { ventureGraph } from "../graph/graph";
 
 const chatService = new ChatService();
 

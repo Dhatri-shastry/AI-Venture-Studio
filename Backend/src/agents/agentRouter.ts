@@ -1,5 +1,5 @@
-import { StartupValidationAgent } from "./startupValidation.agent";
-import { MarketResearchAgent } from "./marketResearch.agent";
+import { StartupValidationAgent } from "./startup.agent";
+import { MarketResearchAgent } from "./market.agent";
 import { CompetitorAgent } from "./competitor.agent";
 import { InvestorAgent } from "./investor.agent";
 import { RoadmapAgent } from "./roadmap.agent";

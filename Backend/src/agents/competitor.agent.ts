@@ -1,4 +1,4 @@
-import { BaseAgent } from "./BaseAgent";
+import { BaseAgent } from "./Base.Agent";
 
 export class CompetitorAgent extends BaseAgent {
 
