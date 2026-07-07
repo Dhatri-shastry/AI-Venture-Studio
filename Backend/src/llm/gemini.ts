@@ -1,45 +1,28 @@
-import { VentureState } from "../state";
+import { GoogleGenAI } from "@google/genai";
 
-import { StartupValidationAgent } from "../../agents/startupValidation.agent";
+export class GeminiProvider {
 
-import { LLMRouter } from "../../llm/router";
+    private client: GoogleGenAI;
+    private model: string;
 
-export async function startupNode(
+    constructor() {
+        const apiKey = process.env.GEMINI_API_KEY;
 
-    state: VentureState
-
-): Promise<VentureState> {
-
-    const router = new LLMRouter();
-
-    const agent = new StartupValidationAgent();
-
-    const prompt = agent.buildPrompt(
-
-        state.message
-
-    );
-
-    const result = await router.ask(
-
-        state.provider,
-
-        prompt
-
-    );
-
-    return {
-
-        ...state,
-
-        outputs: {
-
-            ...state.outputs,
-
-            startup: result
-
+        if (!apiKey) {
+            throw new Error("GEMINI_API_KEY is not set");
         }
 
-    };
+        this.client = new GoogleGenAI({ apiKey });
+        this.model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    }
+
+    async generate(prompt: string): Promise<string> {
+        const response = await this.client.models.generateContent({
+            model: this.model,
+            contents: prompt,
+        });
+
+        return response.text ?? "";
+    }
 
 }

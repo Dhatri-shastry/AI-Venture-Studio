@@ -1,11 +1,9 @@
 import { Router } from "express";
+import { authenticate } from "../middleware/auth";
+import { executeAgent } from "../controllers/agent.controller";
 
 const router = Router();
 
-router.post("/", (req, res) => {
-    res.json({
-        message: "Agent Route Working"
-    });
-});
+router.post("/", authenticate, executeAgent);
 
 export default router;

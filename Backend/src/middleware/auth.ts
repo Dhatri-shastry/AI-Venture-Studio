@@ -1,4 +1,5 @@
 import { getAuth } from "firebase-admin/auth";
+import "../../firebase/firebaseAdmin";
 
 export const authenticate = async (
   req: any,

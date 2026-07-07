@@ -6,6 +6,7 @@ import chatRoutes from "./routes/chat.routes";
 import researchRoutes from "./routes/research.routes";
 import projectRoutes from "./routes/project.routes";
 import agentRoutes from "./routes/agent.routes";
+import userRoutes from "./routes/user.routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -29,6 +30,8 @@ app.use("/api/research", researchRoutes);
 app.use("/api/project", projectRoutes);
 
 app.use("/api/agent", agentRoutes);
+
+app.use("/api/user", userRoutes);
 
 app.use(errorHandler);
 

@@ -3,8 +3,4 @@ export type AgentType =
     | "market"
     | "competitor"
     | "investor"
-    | "roadmap"
-    | "swot"
-    | "business"
-    | "financial"
-    | "risk";
+    | "innovation";

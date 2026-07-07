@@ -1,11 +1,9 @@
 import { Router } from "express";
+import { authenticate } from "../middleware/auth";
+import { startResearch } from "../controllers/research.controller";
 
 const router = Router();
 
-router.post("/", (req, res) => {
-    res.json({
-        message: "Research Route Working"
-    });
-});
+router.post("/", authenticate, startResearch);
 
 export default router;

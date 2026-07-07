@@ -5,6 +5,8 @@ import gsap from 'gsap';
 import { Paperclip, Mic, ArrowUp, Sparkles, AlertCircle, Compass, ShieldAlert, ArrowRight } from 'lucide-react';
 import Image from "next/image";
 import { sendMessage } from '@/services/chat.service';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ChatAreaProps {
   theme: 'light' | 'dark';
@@ -116,7 +118,7 @@ useEffect(() => {
       ...prev,
       {
         role: "assistant",
-        content: response.response,
+        content: response.report,
       },
     ]);
     setLoading(false);
@@ -234,7 +236,50 @@ useEffect(() => {
       : "bg-gray-100 text-black"
   }`}
 >
-  {message.content}
+  {message.role === "assistant" ? (
+  <ReactMarkdown
+    remarkPlugins={[remarkGfm]}
+    components={{
+      h1: ({ children }) => (
+        <h1 className="text-2xl font-bold mb-4">{children}</h1>
+      ),
+      h2: ({ children }) => (
+        <h2 className="text-xl font-semibold mb-3">{children}</h2>
+      ),
+      h3: ({ children }) => (
+        <h3 className="text-lg font-semibold mb-2">{children}</h3>
+      ),
+      p: ({ children }) => (
+        <p className="mb-3 leading-7">{children}</p>
+      ),
+      ul: ({ children }) => (
+        <ul className="list-disc ml-6 mb-3 space-y-1">
+          {children}
+        </ul>
+      ),
+      ol: ({ children }) => (
+        <ol className="list-decimal ml-6 mb-3 space-y-1">
+          {children}
+        </ol>
+      ),
+      li: ({ children }) => (
+        <li>{children}</li>
+      ),
+      strong: ({ children }) => (
+        <strong className="font-semibold">{children}</strong>
+      ),
+      code: ({ children }) => (
+        <code className="bg-gray-200 dark:bg-gray-700 rounded px-1 py-0.5 text-sm">
+          {children}
+        </code>
+      ),
+    }}
+  >
+    {message.content}
+  </ReactMarkdown>
+) : (
+  <span>{message.content}</span>
+)}
 </div>
               </div>
             ))}
