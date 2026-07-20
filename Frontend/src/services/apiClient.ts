@@ -10,18 +10,13 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function isTransientAuthError(error: any): boolean {
+function isTransientError(error: any): boolean {
   const message = String(error?.message ?? error ?? "");
-  return /network-request-failed|timeout|Failed to fetch|NetworkError/i.test(message);
+  // Covers Firebase auth network hiccups AND raw browser fetch failures
+  // (backend momentarily unreachable - e.g. nodemon restarting mid-request).
+  return /network-request-failed|timeout|Failed to fetch|NetworkError|Load failed/i.test(message);
 }
 
-/**
- * Firebase persists your login, but restoring it from storage on page
- * load is ASYNC. Right after a hard refresh, `auth.currentUser` can
- * still be null for a brief moment even though you ARE logged in -
- * this waits for the first real auth state instead of assuming null
- * means "not logged in."
- */
 function waitForAuthUser(timeoutMs = 6000): Promise<User> {
   if (auth.currentUser) {
     return Promise.resolve(auth.currentUser);
@@ -50,7 +45,7 @@ async function getIdTokenWithRetry(user: User): Promise<string> {
       return await user.getIdToken();
     } catch (error) {
       lastError = error;
-      if (!isTransientAuthError(error) || attempt === MAX_RETRIES) throw error;
+      if (!isTransientError(error) || attempt === MAX_RETRIES) throw error;
       await sleep(RETRY_DELAY_MS * (attempt + 1));
     }
   }
@@ -66,11 +61,35 @@ async function parseResponse(response: Response) {
   return data;
 }
 
+/**
+ * Wraps the actual network call (not just token acquisition) with retry
+ * on transient failures. "Failed to fetch" from the browser means the
+ * request never got a response at all - most commonly a backend that
+ * was momentarily unreachable (a dev server restarting mid-request is
+ * the classic case). Retrying once or twice resolves this almost every
+ * time without the user needing to manually retry.
+ */
+async function fetchWithRetry(url: string, options: RequestInit): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fetch(url, options);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientError(error) || attempt === MAX_RETRIES) throw error;
+      await sleep(RETRY_DELAY_MS * (attempt + 1));
+    }
+  }
+
+  throw lastError;
+}
+
 export async function authedFetch(path: string, options: RequestInit = {}) {
   const user = await waitForAuthUser();
   const token = await getIdTokenWithRetry(user);
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetchWithRetry(`${API_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -82,13 +101,11 @@ export async function authedFetch(path: string, options: RequestInit = {}) {
   return parseResponse(response);
 }
 
-/** For file uploads - no Content-Type here on purpose, the browser sets
- * the correct multipart boundary automatically for FormData bodies. */
 export async function authedUpload(path: string, formData: FormData) {
   const user = await waitForAuthUser();
   const token = await getIdTokenWithRetry(user);
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetchWithRetry(`${API_URL}${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
