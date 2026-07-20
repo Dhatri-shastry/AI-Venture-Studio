@@ -3,4 +3,14 @@ export type AgentType =
     | "market"
     | "competitor"
     | "investor"
-    | "innovation";
+    | "innovation"
+    | "customerPersona"
+    | "pricing"
+    | "businessModel"
+    | "financial"
+    | "swot"
+    | "risk"
+    | "gtm"
+    | "technical"
+    | "marketing"
+    | "regulatory";

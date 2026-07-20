@@ -1,20 +1,14 @@
 "use client";
 
-import { 
-  Plus, 
-  History, 
-  Briefcase, 
-  Compass, 
-  FileText, 
-  Settings, 
-  ChevronLeft, 
-  ChevronRight, 
-  Workflow
+import {
+  Plus, History, Briefcase, Compass, FileText, Settings,
+  ChevronLeft, ChevronRight, Workflow
 } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { listChats, ChatSummary } from "@/services/chat.service";
 
 interface SidebarProps {
   theme: "light" | "dark";
@@ -24,41 +18,56 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void;
   onOpenHistory: () => void;
   onResetChat: () => void;
+  onSelectChat?: (chatId: string) => void;
+  // Bump this (e.g. pass Date.now() or a counter) whenever a new chat is
+  // created elsewhere, to make the sidebar refetch and show it.
+  refreshKey?: number | string;
 }
 
 export default function Sidebar({
-  theme,
-  collapsed,
-  setCollapsed,
-  activeTab,
-  setActiveTab,
-  onOpenHistory,
-  onResetChat,
+  theme, collapsed, setCollapsed, activeTab, setActiveTab,
+  onOpenHistory, onResetChat, onSelectChat, refreshKey,
 }: SidebarProps) {
-  
+
   const [user, setUser] = useState<User | null>(null);
+  const [recentChats, setRecentChats] = useState<ChatSummary[]>([]);
+  const [loadingChats, setLoadingChats] = useState(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
-
     return () => unsubscribe();
   }, []);
 
-  const menuItems = [
-  { id: "new-chat", label: "New Chat", icon: Plus, action: onResetChat },
-  { id: "projects", label: "Projects", icon: Briefcase },
-  { id: "research", label: "Research", icon: Compass },
-  { id: "documents", label: "Documents", icon: FileText },
-  { id: "settings", label: "Settings", icon: Settings },
-];
+ useEffect(() => {
+    if (!user) return;
 
-const recentChats = [
-  "Startup Validation",
-  "Market Research",
-  "Investor Pitch",
-  "Food Delivery App",
-];
+    setLoadingChats(true);
+    listChats()
+      .then((chats) => setRecentChats(chats.slice(0, 5)))
+      .catch((err) => {
+        console.error("Failed to load recent chats", err);
+        // chat.service.ts already retries transient auth/network errors
+        // internally - if we're still here, it's worth one more try
+        // after a short pause rather than leaving the sidebar stuck
+        // showing "No chats yet" when chats actually exist.
+        setTimeout(() => {
+          listChats()
+            .then((chats) => setRecentChats(chats.slice(0, 5)))
+            .catch((retryErr) => console.error("Retry also failed", retryErr));
+        }, 1500);
+      })
+      .finally(() => setLoadingChats(false));
+  }, [user, refreshKey]);
+
+  const menuItems = [
+    { id: "new-chat", label: "New Chat", icon: Plus, action: onResetChat },
+    { id: "projects", label: "Projects", icon: Briefcase },
+    { id: "research", label: "Research", icon: Compass },
+    { id: "documents", label: "Documents", icon: FileText },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
 
   return (
     <aside
@@ -66,12 +75,11 @@ const recentChats = [
       className={`h-screen flex flex-col border-r transition-all duration-300 ease-in-out shrink-0 select-none ${
         collapsed ? 'w-16' : 'w-[280px]'
       } ${
-        theme === 'dark' 
-          ? 'bg-[#0B0B0B] border-zinc-900/80 text-zinc-200' 
+        theme === 'dark'
+          ? 'bg-[#0B0B0B] border-zinc-900/80 text-zinc-200'
           : 'bg-white border-slate-200 text-slate-800'
       }`}
     >
-      {/* Sidebar Header: Logo & Title */}
       <div className={`p-4 h-14 flex items-center justify-between border-b ${
         theme === 'dark' ? 'border-zinc-900' : 'border-slate-100'
       }`}>
@@ -81,9 +89,7 @@ const recentChats = [
           </div>
           {!collapsed && (
             <div className="flex flex-col whitespace-nowrap animate-fade-in text-left">
-              <span className="text-xs font-extrabold tracking-tight font-sans">
-                AI Venture Studio
-              </span>
+              <span className="text-xs font-extrabold tracking-tight font-sans">AI Venture Studio</span>
               <span className={`text-[9px] font-medium tracking-wider uppercase ${theme === 'dark' ? 'text-zinc-500' : 'text-slate-400'}`}>
                 Creator Suite
               </span>
@@ -91,7 +97,6 @@ const recentChats = [
           )}
         </div>
 
-        {/* Desktop Collapse Toggle */}
         {!collapsed && (
           <button
             onClick={() => setCollapsed(true)}
@@ -116,7 +121,6 @@ const recentChats = [
         )}
       </div>
 
-      {/* Main Menu Navigation */}
       <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
         {menuItems.map((item) => {
           const IconComponent = item.icon;
@@ -125,116 +129,88 @@ const recentChats = [
             <button
               key={item.id}
               onClick={() => {
-                if (item.action) {
-                  item.action();
-                } else {
-                  setActiveTab(item.id);
-                }
+                if (item.action) item.action();
+                else setActiveTab(item.id);
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200 ${
-                isActive 
-                  ? 'bg-[#2563EB] text-white shadow-sm' 
-                  : theme === 'dark' 
-                    ? 'text-zinc-400 hover:text-white hover:bg-zinc-90 w-full hover:bg-zinc-900/60' 
+                isActive
+                  ? 'bg-[#2563EB] text-white shadow-sm'
+                  : theme === 'dark'
+                    ? 'text-zinc-400 hover:text-white hover:bg-zinc-90 w-full hover:bg-zinc-900/60'
                     : 'text-slate-650 text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               }`}
             >
               <IconComponent className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-white' : 'text-slate-500 dark:text-zinc-400'}`} />
               {!collapsed && (
-                <span className="truncate whitespace-nowrap font-medium text-[15px]">
-                  {item.label}
-                </span>
+                <span className="truncate whitespace-nowrap font-medium text-[15px]">{item.label}</span>
               )}
             </button>
           );
         })}
       </nav>
 
-{/* Recent Chats */}
-{!collapsed && (
-  <div className="mt-6 border-t border-slate-200 dark:border-zinc-800 pt-4">
-    <div className="flex items-center gap-2 px-3 mb-3">
-      <History className="h-4 w-4 text-[#2563EB]" />
-      <span className="text-xs font-bold uppercase tracking-wide text-[#2563EB]">
-        Recent Chats
-      </span>
-    </div>
+      {!collapsed && (
+        <div className="mt-6 border-t border-slate-200 dark:border-zinc-800 pt-4">
+          <div className="flex items-center gap-2 px-3 mb-3">
+            <History className="h-4 w-4 text-[#2563EB]" />
+            <span className="text-xs font-bold uppercase tracking-wide text-[#2563EB]">Recent Chats</span>
+          </div>
 
-    <div className="space-y-1">
-      {recentChats.map((chat, index) => (
-        <button
-          key={index}
-          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-            theme === "dark"
-              ? "hover:bg-zinc-900 text-zinc-300"
-              : "hover:bg-slate-100 text-slate-700"
-          }`}
-        >
-          {chat}
-        </button>
-      ))}
+          <div className="space-y-1">
+            {loadingChats ? (
+              <p className="px-3 py-2 text-sm text-slate-400 dark:text-zinc-500">Loading...</p>
+            ) : recentChats.length === 0 ? (
+              <p className="px-3 py-2 text-sm text-slate-400 dark:text-zinc-500">No chats yet</p>
+            ) : (
+              recentChats.map((chat) => (
+                <button
+                  key={chat._id}
+                  onClick={() => onSelectChat?.(chat._id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition ${
+                    theme === "dark" ? "hover:bg-zinc-900 text-zinc-300" : "hover:bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  {chat.title}
+                </button>
+              ))
+            )}
 
-      <button
-        onClick={onOpenHistory}
-        className="w-full text-left px-3 py-2 text-sm font-bold text-[#2563EB] hover:underline"
-      >
-        View All →
-      </button>
-    </div>
-  </div>
-)}
+            <button
+              onClick={onOpenHistory}
+              className="w-full text-left px-3 py-2 text-sm font-bold text-[#2563EB] hover:underline"
+            >
+              View All →
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* Sidebar Footer */}
-      <div className={`p-4 border-t ${
-        theme === 'dark' ? 'border-zinc-900 bg-zinc-950/20' : 'border-slate-100 bg-slate-50/20'
-      }`}>
+      <div className={`p-4 border-t ${theme === 'dark' ? 'border-zinc-900 bg-zinc-950/20' : 'border-slate-100 bg-slate-50/20'}`}>
         <div className="flex flex-col space-y-4">
-          
-          {/* User Profile item */}
           <div className="flex items-center justify-between overflow-hidden">
             <div className="flex items-center space-x-3 min-w-0">
               <div
-  id="user-avatar"
-  className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-blue-600 text-white font-bold text-xs shadow-sm shadow-blue-600/10 flex items-center justify-center"
->
-  {user?.photoURL ? (
-    <Image
-      src={user.photoURL}
-      alt={user.displayName || "User"}
-      fill
-      className="object-cover"
-      unoptimized
-    />
-  ) : (
-    <span>
-      {user?.displayName
-        ?.split(" ")
-        .map((word) => word[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "U"}
-    </span>
-  )}
-</div>
+                id="user-avatar"
+                className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-blue-600 text-white font-bold text-xs shadow-sm shadow-blue-600/10 flex items-center justify-center"
+              >
+                {user?.photoURL ? (
+                  <Image src={user.photoURL} alt={user.displayName || "User"} fill sizes="32px" className="object-cover" unoptimized />
+                ) : (
+                  <span>
+                    {user?.displayName?.split(" ").map((word) => word[0]).join("").slice(0, 2).toUpperCase() || "U"}
+                  </span>
+                )}
+              </div>
               {!collapsed && (
                 <div className="flex flex-col min-w-0 text-left">
-                  <span
-  className={`text-xs font-bold truncate ${
-    theme === "dark"
-      ? "text-zinc-300"
-      : "text-slate-800"
-  }`}
->
-  {user?.displayName || "Guest User"}
-</span>
-                  <span className="text-[10px] text-slate-400 truncate dark:text-zinc-500">
-  {user?.email || ""}
-</span>
+                  <span className={`text-xs font-bold truncate ${theme === "dark" ? "text-zinc-300" : "text-slate-800"}`}>
+                    {user?.displayName || "Guest User"}
+                  </span>
+                  <span className="text-[10px] text-slate-400 truncate dark:text-zinc-500">{user?.email || ""}</span>
                 </div>
               )}
             </div>
           </div>
-
         </div>
       </div>
     </aside>

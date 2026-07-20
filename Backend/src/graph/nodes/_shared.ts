@@ -7,13 +7,20 @@ const router = new LLMRouter();
 
 /**
  * Shared execution logic for every "run one agent against the user's
- * message" node (startup, market, competitor, investor, innovation).
- * Keeps each node file to a one-liner while staying easy to override
+ * message" node (startup, market, competitor, investor, etc). Keeps
+ * each node file to a one-liner while staying easy to override
  * per-agent later if one of them needs special handling.
  *
- * Forwards `state.reportMode` (set by the supervisor when the user
- * explicitly asked for a full report/deep analysis) so the agent knows
- * whether to write a structured report or answer conversationally.
+ * Forwards:
+ *  - state.reportMode       - structured report vs conversational answer
+ *  - state.history          - prior turns of this conversation (chat memory)
+ *  - state.projectProfile   - persistent venture memory (idea, users,
+ *    pricing, competitors, roadmap - survives across the whole project,
+ *    not just recent messages)
+ *  - state.researchFindings - live web/local-business search results,
+ *    when the selected agents needed current real-world facts
+ *  - state.investorPersona  - "sequoia"/"yc"/"vc" when the founder asked
+ *    to hear a specific investor lens
  */
 export async function runAgentNode(
     outputKey: string,
@@ -23,7 +30,14 @@ export async function runAgentNode(
 
     const basePrompt = agent.buildPrompt(
         state.message,
-        { reportMode: state.reportMode }
+        {
+            reportMode: state.reportMode,
+            history: state.history,
+            projectProfile: state.projectProfile,
+            researchFindings: state.researchFindings,
+            attachmentContext: state.attachmentContext,
+            investorPersona: state.investorPersona,
+        }
     );
 
     const prompt = withContext(basePrompt, state.context);

@@ -39,9 +39,9 @@ const chatSchema = new mongoose.Schema({
     },
 
     userId: {
-    type: String,
-    required: true,
-},
+        type: String,
+        required: true,
+    },
 
     title: String,
 

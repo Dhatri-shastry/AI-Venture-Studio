@@ -3,12 +3,6 @@ import { getAuth } from "firebase-admin/auth";
 import "../../firebase/firebaseAdmin";
 import User from "../models/User";
 
-/**
- * Both login and register follow the same pattern used with Firebase Auth:
- * the client signs in/up with Firebase directly, gets an ID token, and
- * sends it here. We verify it and sync a local User profile in Mongo
- * (which is what the rest of the app - projects, chats - foreign-keys to).
- */
 async function syncUserFromToken(idToken: string) {
     const decoded = await getAuth().verifyIdToken(idToken);
 

@@ -1,41 +1,64 @@
 'use client';
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/workspace/Sidebar";
 import ChatHistory from "@/components/workspace/ChatHistory";
 import ChatArea from "@/components/workspace/ChatArea";
+import ProjectsPanel from "@/components/workspace/ProjectsPanel";
+import ResearchPanel from "@/components/workspace/ResearchPanel";
+import DocumentsPanel from "@/components/workspace/DocumentsPanel";
+import SettingsPanel from "@/components/workspace/SettingsPanel";
 import RobotAssistant from "@/components/workspace/RobotAssistant";
 import WorkspaceHeader from "@/components/workspace/WorkSpaceHeader";
 
+function WorkspaceContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-export default function WorkspacePage() {
-  // Light is default theme
+  const activeChatId = searchParams.get("chat");
+  const activeProjectId = searchParams.get("project");
+
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('new-chat');
-  
-  // History panel slide-in state
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
-
-  // Mobile layout responsiveness states
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Sync state theme class to root element
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    if (theme === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+
+  const updateUrlParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    const query = params.toString();
+    router.push(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    setRefreshKey((k) => k + 1);
   };
 
   const handleResetChat = () => {
     setActiveTab('new-chat');
     setMobileSidebarOpen(false);
+    updateUrlParams({ chat: null });
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    setActiveTab('new-chat');
+    setMobileSidebarOpen(false);
+    updateUrlParams({ chat: chatId });
+  };
+
+  const handleSelectProject = (projectId: string) => {
+    updateUrlParams({ project: projectId });
   };
 
   const handleOpenHistoryDrawer = () => {
@@ -47,32 +70,26 @@ export default function WorkspacePage() {
     <div className={`flex h-screen w-full overflow-hidden transition-colors duration-300 font-sans ${
       theme === 'dark' ? 'bg-black text-zinc-100' : 'bg-[#F8FAFC] text-slate-800'
     }`}>
-      
-      {/* Left Navigation Sidebar - Fixed or Slider on Mobile */}
-      <div className={`fixed inset-y-0 left-0 z-40 md:static md:block ${
-        mobileSidebarOpen ? 'block' : 'hidden md:block'
-      }`}>
-        {/* Backdrop for mobile overlays */}
+
+      <div className={`fixed inset-y-0 left-0 z-40 md:static md:block ${mobileSidebarOpen ? 'block' : 'hidden md:block'}`}>
         {mobileSidebarOpen && (
-          <div 
-            onClick={() => setMobileSidebarOpen(false)}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-30 md:hidden"
-          ></div>
+          <div onClick={() => setMobileSidebarOpen(false)} className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-30 md:hidden"></div>
         )}
         <div className="relative z-40 h-full">
           <Sidebar
-  theme={theme}
-  collapsed={sidebarCollapsed}
-  setCollapsed={setSidebarCollapsed}
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-  onOpenHistory={handleOpenHistoryDrawer}
-  onResetChat={handleResetChat}
-/>
+            theme={theme}
+            collapsed={sidebarCollapsed}
+            setCollapsed={setSidebarCollapsed}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onOpenHistory={handleOpenHistoryDrawer}
+            onResetChat={handleResetChat}
+            onSelectChat={handleSelectChat}
+            refreshKey={refreshKey}
+          />
         </div>
       </div>
 
-      {/* Main Chat Workspace Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <WorkspaceHeader
           theme={theme}
@@ -80,21 +97,41 @@ export default function WorkspacePage() {
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           sidebarCollapsed={sidebarCollapsed}
         />
-        
-        {/* Conversation stage occupies almost the entire screen */}
-        <ChatArea theme={theme} />
+
+        {activeTab === 'projects' ? (
+          <ProjectsPanel theme={theme} activeProjectId={activeProjectId} onSelectProject={handleSelectProject} />
+        ) : activeTab === 'research' ? (
+          <ResearchPanel theme={theme} activeProjectId={activeProjectId} />
+        ) : activeTab === 'documents' ? (
+          <DocumentsPanel theme={theme} activeProjectId={activeProjectId} />
+        ) : activeTab === 'settings' ? (
+          <SettingsPanel theme={theme} />
+        ) : (
+          <ChatArea
+            theme={theme}
+            chatId={activeChatId}
+            onChatIdChange={(id) => updateUrlParams({ chat: id })}
+            projectId={activeProjectId}
+          />
+        )}
       </div>
 
-      {/* Conversational companion - Floating robot assistant (bottom right, mobile & desktop) */}
       <RobotAssistant theme={theme} />
 
-      {/* Clean Drawer sliding from left for Chat History - shown ONLY on trigger click */}
       <ChatHistory
         theme={theme}
         isOpen={historyDrawerOpen}
         onClose={() => setHistoryDrawerOpen(false)}
+        onSelectChat={handleSelectChat}
       />
-
     </div>
+  );
+}
+
+export default function WorkspacePage() {
+  return (
+    <Suspense fallback={null}>
+      <WorkspaceContent />
+    </Suspense>
   );
 }

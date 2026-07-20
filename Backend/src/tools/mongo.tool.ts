@@ -7,12 +7,6 @@ const schema = z.object({
     projectId: z.string().describe("The Mongo _id of the project to look up"),
 });
 
-/**
- * Lets an agent pull a project's stored profile (title, description,
- * status) plus a short slice of recent chat history, so it can ground
- * its answer in what's already known about this venture instead of
- * relying only on the current message.
- */
 export const projectLookupTool = tool(
     async ({ projectId }: z.infer<typeof schema>) => {
         const project = await Project.findById(projectId).lean();

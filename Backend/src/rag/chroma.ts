@@ -8,8 +8,6 @@ let collection: Collection | null = null;
 
 function getClient(): ChromaClient {
     if (!client) {
-        // Defaults to a local Chroma server at http://localhost:8000
-        // (run with: pip install chromadb && chroma run --path ./chroma-data)
         client = new ChromaClient({
             path: process.env.CHROMA_URL || "http://localhost:8000",
         });
@@ -35,9 +33,11 @@ export interface ChunkMetadata {
     [key: string]: string | number | boolean;
 }
 
-/**
- * Adds pre-chunked text documents (with their own embeddings) to Chroma.
- */
+export interface RetrievedChunk {
+    text: string;
+    source: string;
+}
+
 export async function addDocuments(
     ids: string[],
     documents: string[],
@@ -56,13 +56,15 @@ export async function addDocuments(
 
 /**
  * Queries Chroma for the `topK` chunks most similar to `query`,
- * optionally scoped to a single project.
+ * optionally scoped to a single project. Returns each chunk paired with
+ * its source label (the document/URL it came from), so callers can
+ * attribute what they use - this is what makes citations possible.
  */
 export async function queryDocuments(
     query: string,
     topK = 4,
     projectId?: string
-): Promise<string[]> {
+): Promise<RetrievedChunk[]> {
     const col = await getCollection();
     const queryEmbedding = await embedText(query);
 
@@ -72,5 +74,14 @@ export async function queryDocuments(
         where: projectId ? { projectId } : undefined,
     });
 
-    return results.documents?.[0]?.filter((doc): doc is string => doc !== null) ?? [];
+    const documents = results.documents?.[0] ?? [];
+    const metadatas = results.metadatas?.[0] ?? [];
+
+    return documents
+        .map((doc, i) => ({
+            text: doc,
+            source: (metadatas[i] as any)?.source as string | undefined,
+        }))
+        .filter((chunk): chunk is RetrievedChunk => chunk.text !== null && chunk.text !== undefined)
+        .map((chunk) => ({ text: chunk.text, source: chunk.source || "unknown source" }));
 }

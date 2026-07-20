@@ -1,15 +1,11 @@
 import { randomUUID } from "crypto";
 import { embedTexts } from "./embedding";
 import { addDocuments, ChunkMetadata } from "./chroma";
+import Document from "../models/Document";
 
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
 
-/**
- * Simple fixed-size, overlapping character chunker.
- * Good enough for research notes / pasted text / scraped pages;
- * swap for a token-aware splitter later if quality needs it.
- */
 export function chunkText(text: string): string[] {
     const clean = text.replace(/\r\n/g, "\n").trim();
 
@@ -29,11 +25,6 @@ export function chunkText(text: string): string[] {
     return chunks;
 }
 
-/**
- * Chunks, embeds, and stores a piece of text (e.g. a research note,
- * a pasted article, a scraped competitor page) into the vector store
- * under a given project.
- */
 export async function loadTextIntoRAG(
     projectId: string,
     source: string,
@@ -55,6 +46,17 @@ export async function loadTextIntoRAG(
     }));
 
     await addDocuments(ids, chunks, embeddings, metadatas);
+
+    // Every ingestion path (pasted text, uploaded file, scraped URL,
+    // image/document attachments with a projectId) goes through this
+    // one function - recording it here means the Documents tab doesn't
+    // need every caller to remember to log it separately. Best-effort:
+    // a logging failure shouldn't undo a successful ingestion.
+    try {
+        await Document.create({ projectId, source, chunksAdded: chunks.length });
+    } catch (error) {
+        console.error("loadTextIntoRAG: failed to record Document entry (non-fatal)", error);
+    }
 
     return { chunksAdded: chunks.length };
 }

@@ -7,20 +7,20 @@ const schema = z.object({
     projectId: z.string().describe("The project to scope the search to"),
 });
 
-/**
- * Exposes the RAG retrieval step as an agent tool, so an agent can pull
- * relevant chunks from ingested research/notes on demand instead of only
- * getting context pre-injected by loadContext.node.ts.
- */
 export const ragSearchTool = tool(
     async ({ query, projectId }: z.infer<typeof schema>) => {
-        const context = await retrieveContext(query, projectId);
-        return context || "No relevant stored documents found for this project.";
+        const { context, sources } = await retrieveContext(query, projectId);
+
+        if (!context) {
+            return "No relevant stored documents found for this project.";
+        }
+
+        return `${context}\n\n(Sources: ${sources.join(", ")})`;
     },
     {
         name: "search_project_documents",
         description:
-            "Searches previously ingested research notes/documents for a project and returns the most relevant excerpts.",
+            "Searches previously ingested research notes/documents for a project and returns the most relevant excerpts with their sources.",
         schema,
     }
 );

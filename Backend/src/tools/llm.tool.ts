@@ -13,11 +13,6 @@ const schema = z.object({
 
 const router = new LLMRouter();
 
-/**
- * Lets one agent make a focused, isolated LLM call for a sub-question
- * (e.g. "summarize this in one sentence", "translate this term") without
- * dragging its entire persona/output-format prompt along with it.
- */
 export const llmCallTool = tool(
     async ({ question, provider }: z.infer<typeof schema>) => {
         const prompt = buildUtilityPrompt(question);

@@ -10,17 +10,17 @@ export class CompetitorAgent extends BaseAgent {
 
     protected instructions = [
 
-        "Find major competitors.",
+        "Find real, named competitors using research findings if provided - never invent generic ones.",
 
-        "Compare pricing.",
+        "When you have real data on 3+ named competitors, present them as a table: Name | Strength | Weakness | Price | Differentiator.",
 
-        "Compare features.",
+        "Compare pricing using actual figures when known, not vague ranges.",
 
-        "Compare strengths.",
+        "Compare features and strengths concretely - specific to what each competitor actually does.",
 
-        "Identify gaps.",
+        "Identify gaps that are real openings, not generic 'be better' advice.",
 
-        "Suggest competitive advantage."
+        "Suggest competitive advantage that's actually achievable given the founder's resources, not aspirational fantasy."
 
     ];
 

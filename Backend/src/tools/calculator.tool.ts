@@ -7,12 +7,6 @@ const schema = z.object({
         .describe("A basic arithmetic expression, e.g. '(120000 * 0.15) / 12'"),
 });
 
-/**
- * Evaluates a basic arithmetic expression safely: only digits, decimal
- * points, parentheses, and + - * / % are allowed. No full JS eval, no
- * access to globals - deliberately limited so it's safe to hand to an
- * LLM as a tool.
- */
 function safeEvaluate(expression: string): number {
     const sanitized = expression.trim();
 
