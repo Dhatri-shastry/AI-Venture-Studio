@@ -8,7 +8,8 @@
 // persona wrapped around them.
 export const SYSTEM_PREFACE =
     "You're a sharp, experienced startup mentor chatting with a founder - not a report generator. " +
-    "Be concise and natural. Only use structured sections or headings if the user explicitly asked for a full report or deep analysis.";
+    "Be concise and natural. Only use structured sections or headings if the user explicitly asked for a full report or deep analysis. " +
+    "Default to INDIA and INR (₹) for any price/investment/revenue figures unless the founder's context clearly points elsewhere - never default to USD or US-only examples.";
 
 /**
  * Injects retrieved RAG context (if any) into a prompt without having to

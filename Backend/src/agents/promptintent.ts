@@ -118,31 +118,74 @@ export function wantsResearch(text: string): boolean {
 }
 
 /**
- * Light fallback signal only - the primary decision-brief detection
- * lives in supervisor.node.ts's classifyMessage LLM call (same lesson
- * as agent routing: keyword matching alone is too fragile for open-
- * ended phrasing like "should I do this" vs "is this worth pursuing").
- * This just catches the most explicit, unambiguous phrasings cheaply
- * without needing the classifier call to fire correctly every time.
+ * Light fallback signals only - the primary depth decision lives in
+ * supervisor.node.ts's classifyMessage LLM call (same lesson as agent
+ * routing: keyword matching alone is too fragile for open-ended
+ * phrasing). These just catch the most explicit, unambiguous phrasings
+ * cheaply without needing the classifier call to fire correctly every
+ * time - see ResponseDepth in supervisor.node.ts for what each level
+ * actually produces.
+ *
+ * Split in two on purpose:
+ *  - VALIDATION_TRIGGERS: a genuine "should I do this" / "is this
+ *    idea worth building" ask -> Level 2 (a concise, decision-focused
+ *    validation report - verdict, why it works, competitor snapshot,
+ *    next steps - NOT a full report with every possible section).
+ *  - FULL_REPORT_TRIGGERS: an explicit ask for the exhaustive version
+ *    (TAM/SAM/SOM, financial projections, personas, full SWOT, a
+ *    literal "full/complete report") -> Level 3.
+ * A message can match VALIDATION without FULL_REPORT (the common
+ * case), but FULL_REPORT always wins if both match.
  */
-const DECISION_BRIEF_TRIGGERS = [
-    "decision brief",
-    "full analysis",
-    "complete analysis",
+const VALIDATION_TRIGGERS = [
     "should i start",
     "should i do this",
     "should i pursue",
     "should i build this",
     "is this worth pursuing",
     "is this worth doing",
+    "is this worth building",
+    "is this a good idea",
+    "validate this idea",
+    "validate my idea",
+    "validate my startup",
+    "startup validation",
     "go or no go",
-    "full validation",
-    "everything about this idea",
+    "worth building",
 ];
 
-export function wantsDecisionBrief(text: string): boolean {
+export function wantsValidation(text: string): boolean {
     const lower = text.toLowerCase();
-    return DECISION_BRIEF_TRIGGERS.some((trigger) => lower.includes(trigger));
+    return VALIDATION_TRIGGERS.some((trigger) => lower.includes(trigger));
+}
+
+const FULL_REPORT_TRIGGERS = [
+    "decision brief",
+    "full analysis",
+    "complete analysis",
+    "full validation",
+    "everything about this idea",
+    "give me everything",
+    "the complete picture",
+    "tam/sam/som",
+    "tam sam som",
+    "tam, sam",
+    "market sizing",
+    "financial projections",
+    "revenue model",
+    "customer personas",
+    "buyer personas",
+    "swot analysis",
+    "business plan",
+    "go deeper",
+    "dig deeper",
+    "more detail",
+    "expand on that",
+];
+
+export function wantsFullReport(text: string): boolean {
+    const lower = text.toLowerCase();
+    return FULL_REPORT_TRIGGERS.some((trigger) => lower.includes(trigger)) || wantsReport(text);
 }
 
 export type InvestorPersona = "sequoia" | "yc" | "vc" | "";
@@ -180,4 +223,15 @@ export function extractSimulationCount(text: string): number {
     const match = text.match(SIMULATION_PATTERN);
     const count = match?.[1] ? parseInt(match[1], 10) : 50;
     return Number.isFinite(count) && count > 0 ? Math.min(count, 200) : 50;
+}
+
+export function wantsDecisionBrief(text: string): boolean {
+  const patterns = [
+    /\b(decide|decision|recommend|recommendation)\b/i,
+    /\b(which is better|which should I choose)\b/i,
+    /\b(compare\b.*\bchoose\b)/i,
+    /\bshould I\b/i,
+  ];
+
+  return patterns.some(pattern => pattern.test(text));
 }

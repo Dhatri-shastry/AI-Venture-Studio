@@ -32,9 +32,15 @@ export class OpenRouterProvider {
                 Authorization: `Bearer ${this.apiKey}`,
             },
             body: JSON.stringify({
-                model: this.model,
-                messages: [{ role: "user", content: prompt }],
-            }),
+    model: this.model,
+    messages: [
+        {
+            role: "user",
+            content: prompt,
+        },
+    ],
+    max_tokens: 2048,
+}),
         });
 
         if (!res.ok) {

@@ -10,6 +10,47 @@ interface LLMProvider {
 
 const ALL_PROVIDERS: LLMProviderName[] = ["gemini", "groq", "openrouter"];
 
+/**
+ * "I need a fast reasoning model" / "I need a deep research model" /
+ * "I need a high-quality writing model" - callers that don't care WHICH
+ * provider answers, only what kind of job it's doing, ask by capability
+ * instead of hardcoding a provider name. Each capability maps to a
+ * preference order; the first provider with a usable API key wins,
+ * with the same automatic fallback chain as ask().
+ *
+ * Override via env without a code change, e.g.:
+ *   LLM_CAPABILITY_FAST=groq,gemini,openrouter
+ *   LLM_CAPABILITY_DEEP=gemini,openrouter,groq
+ *   LLM_CAPABILITY_WRITING=gemini,openrouter,groq
+ */
+export type LLMCapability = "fast" | "deep" | "writing";
+
+const DEFAULT_CAPABILITY_ORDER: Record<LLMCapability, LLMProviderName[]> = {
+    // Lightweight classification/planning calls (intent routing, research
+    // query planning) - latency matters more than depth here.
+    fast: ["groq", "gemini", "openrouter"],
+    // Research-heavy specialist agent answers - favor the stronger
+    // reasoning model first.
+    deep: ["gemini", "openrouter", "groq"],
+    // Final synthesis / report prose - favor whichever model writes the
+    // most coherent long-form Markdown.
+    writing: ["gemini", "openrouter", "groq"],
+};
+
+function capabilityOrderFromEnv(capability: LLMCapability): LLMProviderName[] {
+    const envKey = `LLM_CAPABILITY_${capability.toUpperCase()}`;
+    const configured = process.env[envKey];
+
+    if (!configured) return DEFAULT_CAPABILITY_ORDER[capability];
+
+    const parsed = configured
+        .split(",")
+        .map((p) => p.trim())
+        .filter((p): p is LLMProviderName => (ALL_PROVIDERS as string[]).includes(p));
+
+    return parsed.length > 0 ? parsed : DEFAULT_CAPABILITY_ORDER[capability];
+}
+
 export class LLMRouter {
 
     private providers = new Map<LLMProviderName, LLMProvider>();
@@ -67,7 +108,27 @@ export class LLMRouter {
     async ask(provider: string, prompt: string): Promise<string> {
         const requested = (provider || process.env.DEFAULT_LLM_PROVIDER || "gemini") as LLMProviderName;
         const order = this.fallbackOrder(requested);
+        return this.runOrder(order, requested, prompt);
+    }
 
+    /**
+     * Capability-based entry point: "give me a fast/deep/writing model"
+     * instead of naming a provider. Falls through the same try/fallback
+     * chain as ask(), just ordered by what the capability prefers. If
+     * `preferredProvider` is given (e.g. the user's own provider choice
+     * from the UI) it's tried first, then the capability's own order.
+     */
+    async askForCapability(capability: LLMCapability, prompt: string, preferredProvider?: string): Promise<string> {
+        const capabilityOrder = capabilityOrderFromEnv(capability);
+        const preferred = preferredProvider as LLMProviderName | undefined;
+        const order = preferred
+            ? [preferred, ...capabilityOrder].filter((p, i, arr) => arr.indexOf(p) === i)
+            : capabilityOrder;
+
+        return this.runOrder(order, order[0], prompt);
+    }
+
+    private async runOrder(order: LLMProviderName[], requestedLabel: LLMProviderName, prompt: string): Promise<string> {
         let lastError: unknown;
 
         for (let i = 0; i < order.length; i++) {
@@ -77,7 +138,7 @@ export class LLMRouter {
                 const result = await this.getProvider(name).generate(prompt);
 
                 if (i > 0) {
-                    console.warn(`LLMRouter: "${requested}" was unavailable - fell back to "${name}" successfully`);
+                    console.warn(`LLMRouter: "${requestedLabel}" was unavailable - fell back to "${name}" successfully`);
                 }
 
                 return result;

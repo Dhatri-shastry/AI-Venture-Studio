@@ -4,6 +4,12 @@ import { searchLocalBusinesses, formatLocalBusinesses } from "../../tools/places
 import { wantsResearch } from "../../agents/promptintent";
 import { agentsNeedResearch } from "../edges";
 import { LLMRouter } from "../../llm/router";
+import { getOrSetCache, normalizeCacheKey } from "../../utils/cache";
+
+// Web/local-business results don't change minute to minute - reuse them
+// for a while instead of re-paying for (and waiting on) the same search.
+// Override via env if a faster-moving market needs a shorter window.
+const RESEARCH_CACHE_TTL_MS = Number(process.env.RESEARCH_CACHE_TTL_MS) || 6 * 60 * 60 * 1000; // 6 hours
 
 const router = new LLMRouter();
 
@@ -43,8 +49,10 @@ async function planResearch(
     try {
         const historyBlock = history.trim() ? `\n\nConversation so far:\n${history.trim()}` : "";
 
-        const raw = await router.ask(
-            provider,
+        // Query planning is a quick classification-style call, not the
+        // actual research/writing - route it to the fast capability.
+        const raw = await router.askForCapability(
+            "fast",
             `A founder said: "${message}"${historyBlock}\n\n` +
             `Plan the research needed to answer this well. Respond with ONLY raw JSON, no markdown fences:\n` +
             `{\n` +
@@ -97,12 +105,20 @@ export async function researchNode(state: VentureState): Promise<Partial<Venture
     const plan = await planResearch(state.message, state.history, state.provider);
 
     const [webFindings, localBusinesses] = await Promise.all([
-        runWebSearch(plan.webQuery).catch((error) => {
+        getOrSetCache(
+            normalizeCacheKey("web-search", plan.webQuery),
+            RESEARCH_CACHE_TTL_MS,
+            () => runWebSearch(plan.webQuery)
+        ).catch((error) => {
             console.error("researchNode: web search failed, continuing without it", error);
             return "";
         }),
         plan.isLocalBusinessQuery && plan.localSearchQuery
-            ? searchLocalBusinesses(plan.localSearchQuery).catch((error) => {
+            ? getOrSetCache(
+                  normalizeCacheKey("local-business", plan.localSearchQuery),
+                  RESEARCH_CACHE_TTL_MS,
+                  () => searchLocalBusinesses(plan.localSearchQuery)
+              ).catch((error) => {
                   console.error("researchNode: local business search failed, continuing without it", error);
                   return [];
               })

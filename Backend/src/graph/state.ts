@@ -92,6 +92,19 @@ export const VentureStateAnnotation = Annotation.Root({
         default: () => "",
     }),
 
+    // "comparison" | "validation" | "brainstorm" | "plan" | "factual" |
+    // "conversational" - set by the supervisor's classification call
+    // based on what the founder is actually asking for, not fixed
+    // per-agent. This is the universal response framework: the SAME
+    // startup/market/whatever agent produces a ranked comparison table
+    // for "suggest me one profitable business" but a short direct
+    // answer for "what does TAM mean" - the format adapts to intent
+    // instead of every agent having one baked-in output shape.
+    responseFormat: Annotation<string>({
+        reducer: (_, next) => next,
+        default: () => "conversational",
+    }),
+
     // Merges rather than overwrites, since multiple agent nodes run in
     // parallel and each one only writes its own key into `outputs`.
     outputs: Annotation<Record<string, string>>({
@@ -123,6 +136,7 @@ export const initialVentureState = (
     reportMode: false,
     decisionBrief: false,
     investorPersona: "",
+    responseFormat: "conversational",
     outputs: {},
     finalReport: "",
     ...overrides,

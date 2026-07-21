@@ -21,6 +21,9 @@ const router = new LLMRouter();
  *    when the selected agents needed current real-world facts
  *  - state.investorPersona  - "sequoia"/"yc"/"vc" when the founder asked
  *    to hear a specific investor lens
+ *  - state.responseFormat   - "comparison"/"validation"/"brainstorm"/
+ *    "plan"/"factual"/"conversational" - which structural shape actually
+ *    fits this request (the universal response framework)
  */
 export async function runAgentNode(
     outputKey: string,
@@ -37,6 +40,7 @@ export async function runAgentNode(
             researchFindings: state.researchFindings,
             attachmentContext: state.attachmentContext,
             investorPersona: state.investorPersona,
+            responseFormat: state.responseFormat,
         }
     );
 
